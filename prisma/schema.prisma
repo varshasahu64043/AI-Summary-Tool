@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  transcripts Transcript[]
+  summaries   Summary[]
+  emailShares EmailShare[]
+
+  @@map("users")
+}
+
+model Transcript {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  summaries Summary[]
+
+  @@map("transcripts")
+}
+
+model Summary {
+  id           String   @id @default(cuid())
+  title        String
+  content      String
+  prompt       String   // Custom instruction/prompt used
+  transcriptId String
+  userId       String
+  isEdited     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  transcript  Transcript   @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailShares EmailShare[]
+
+  @@map("summaries")
+}
+
+model EmailShare {
+  id          String   @id @default(cuid())
+  summaryId   String
+  userId      String
+  recipients  String   // JSON array of email addresses
+  subject     String
+  message     String?
+  sentAt      DateTime @default(now())
+
+  // Relations
+  summary Summary @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_shares")
+}
